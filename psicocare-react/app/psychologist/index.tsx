@@ -298,3 +298,9 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
 });
+
+
+export const options = {
+  name6: 'Minhas Sessões',      // título do header (topo da tela)
+  tabBarLabel: 'Dashboard',     // nome que aparece na tab
+};
