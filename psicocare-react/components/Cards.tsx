@@ -25,7 +25,7 @@ export function Card({ title, onPress, children }: CardProps) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#f3f6fb',
+    backgroundColor: '#dedede',
     padding: 20,
     borderRadius: 12,
     marginBottom: 16,
