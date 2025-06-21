@@ -12,7 +12,8 @@ export default function HomeScreen() {
     <View style={styles.container}>
       <View style={styles.imageContainer}>
         <Image
-          source={require('@/assets/images/welcome-page-image.jpg')} // pode trocar pela sua imagem
+          source={require('@/assets/images/3712074.jpg')} // pode trocar pela sua imagem
+
           style={styles.image}
           contentFit="cover"
         />

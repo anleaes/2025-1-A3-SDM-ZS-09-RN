@@ -1,41 +1,38 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { View, TextInput, Button, StyleSheet, Alert } from 'react-native';
+import { useRouter, useSearchParams } from 'expo-router';
 
-export default function SignUpPatient() {
+export default function SignupPatient() {
   const router = useRouter();
-  const { userId } = useLocalSearchParams(); // ID do usuário criado na etapa anterior
+  const { userId } = useSearchParams(); // pega o id do usuário criado na etapa anterior
 
   const [idade, setIdade] = useState('');
   const [genero, setGenero] = useState('');
   const [telefone, setTelefone] = useState('');
   const [planoSaude, setPlanoSaude] = useState('');
 
-  const handleSubmit = async () => {
+  const handleFinishSignup = async () => {
     try {
       const response = await fetch('http://127.0.0.1:8000/api/patients/create/', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          idade: parseInt(idade),
+          idade: Number(idade),
           genero,
           telefone,
           plano_saude: planoSaude,
-          user: parseInt(userId as string),
+          user: Number(userId),
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Erro ao cadastrar paciente');
+        throw new Error('Erro ao criar cadastro do paciente');
       }
 
-      Alert.alert('Sucesso', 'Cadastro concluído com sucesso!');
+      // Redireciona para a tela do paciente após finalizar
       router.push('/patient');
-
     } catch (error: any) {
-      Alert.alert('Erro', error.message || 'Erro ao cadastrar');
+      Alert.alert('Erro', error.message || 'Erro no cadastro');
     }
   };
 
@@ -77,6 +74,7 @@ export default function SignUpPatient() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20, justifyContent: 'center' },
+
   title: { fontSize: 22, marginBottom: 20, textAlign: 'center' },
   input: {
     borderWidth: 1,
