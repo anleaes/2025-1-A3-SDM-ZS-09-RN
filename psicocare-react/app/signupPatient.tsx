@@ -38,13 +38,49 @@ export default function SignupPatient() {
 
   return (
     <View style={styles.container}>
-      {/* Inputs aqui */}
-      {/* ... */}
-      <Button title="Finalizar Cadastro" onPress={handleFinishSignup} />
+      <Text style={styles.title}>Informações do Paciente</Text>
+
+      <TextInput
+        placeholder="Idade"
+        style={styles.input}
+        value={idade}
+        onChangeText={setIdade}
+        keyboardType="numeric"
+      />
+      <TextInput
+        placeholder="Gênero (M/F/Outro)"
+        style={styles.input}
+        value={genero}
+        onChangeText={setGenero}
+      />
+      <TextInput
+        placeholder="Telefone"
+        style={styles.input}
+        value={telefone}
+        onChangeText={setTelefone}
+        keyboardType="phone-pad"
+      />
+      <TextInput
+        placeholder="Plano de Saúde"
+        style={styles.input}
+        value={planoSaude}
+        onChangeText={setPlanoSaude}
+      />
+
+      <Button title="Finalizar Cadastro" onPress={handleSubmit} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20, justifyContent: 'center' },
+
+  title: { fontSize: 22, marginBottom: 20, textAlign: 'center' },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 12,
+  },
 });

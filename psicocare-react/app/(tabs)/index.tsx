@@ -13,6 +13,7 @@ export default function HomeScreen() {
       <View style={styles.imageContainer}>
         <Image
           source={require('@/assets/images/3712074.jpg')} // pode trocar pela sua imagem
+
           style={styles.image}
           contentFit="cover"
         />
@@ -61,7 +62,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   welcomeTitle: {
-    fontSize: 28,
+    fontSize: 36,
     fontWeight: 'bold',
     textAlign: 'left',
     marginBottom: 4,
