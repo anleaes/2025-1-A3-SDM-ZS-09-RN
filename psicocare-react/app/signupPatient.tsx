@@ -1,38 +1,41 @@
 import React, { useState } from 'react';
-import { View, TextInput, Button, StyleSheet, Alert } from 'react-native';
-import { useRouter, useSearchParams } from 'expo-router';
+import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 
-export default function SignupPatient() {
+export default function SignUpPatient() {
   const router = useRouter();
-  const { userId } = useSearchParams(); // pega o id do usuário criado na etapa anterior
+  const { userId } = useLocalSearchParams(); // ID do usuário criado na etapa anterior
 
   const [idade, setIdade] = useState('');
   const [genero, setGenero] = useState('');
   const [telefone, setTelefone] = useState('');
   const [planoSaude, setPlanoSaude] = useState('');
 
-  const handleFinishSignup = async () => {
+  const handleSubmit = async () => {
     try {
       const response = await fetch('http://127.0.0.1:8000/api/patients/create/', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
-          idade: Number(idade),
+          idade: parseInt(idade),
           genero,
           telefone,
           plano_saude: planoSaude,
-          user: Number(userId),
+          user: parseInt(userId as string),
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Erro ao criar cadastro do paciente');
+        throw new Error('Erro ao cadastrar paciente');
       }
 
-      // Redireciona para a tela do paciente após finalizar
-      router.push('/patient');
+      Alert.alert('Sucesso', 'Cadastro concluído com sucesso!');
+      router.push('/patient'); // Redireciona para a página inicial ou dashboard
+
     } catch (error: any) {
-      Alert.alert('Erro', error.message || 'Erro no cadastro');
+      Alert.alert('Erro', error.message || 'Erro ao cadastrar');
     }
   };
 
@@ -74,7 +77,6 @@ export default function SignupPatient() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20, justifyContent: 'center' },
-
   title: { fontSize: 22, marginBottom: 20, textAlign: 'center' },
   input: {
     borderWidth: 1,
