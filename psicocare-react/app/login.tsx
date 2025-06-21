@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage'; // IMPORTANTE
 
 type User = {
   id: number;
@@ -25,6 +26,9 @@ export default function Login() {
       );
 
       if (foundUser) {
+        // Salvar o ID do usuário no AsyncStorage
+        await AsyncStorage.setItem('userId', foundUser.id.toString());
+
         Alert.alert('Login realizado com sucesso!', `Bem-vindo(a), ${foundUser.name}`);
 
         if (foundUser.tipo === 'psicologo') {
