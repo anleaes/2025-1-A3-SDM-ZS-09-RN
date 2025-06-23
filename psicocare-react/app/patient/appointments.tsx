@@ -50,19 +50,38 @@ export default function Appointments() {
         const userId = Number(storedId);
         setLoggedUserId(userId);
 
+        /* */
+        const patientRes = await fetch(`http://127.0.0.1:8000/api/patients/?user=${userId}`);
+        if (!patientRes.ok) throw new Error('Erro ao buscar paciente');
+        
+        const patientData = await patientRes.json();
+        if (patientData.length === 0) throw new Error('Paciente não encontrado');
+        /* */
+
         const [sessionsRes, psychsRes, usersRes] = await Promise.all([
           fetch('http://127.0.0.1:8000/api/sessions/'),
           fetch('http://127.0.0.1:8000/api/psychologists/'),
           fetch('http://127.0.0.1:8000/api/users/'),
         ]);
 
+        if (!sessionsRes.ok || !psychsRes.ok || !usersRes.ok) {
+          throw new Error('Erro na resposta da API');
+        }
+
         const allSessions = await sessionsRes.json();
         const psychs = await psychsRes.json();
         const allUsers = await usersRes.json();
 
         const filteredSessions = allSessions.filter(
-          (s: Session) => s.paciente === userId
+          (s: Session) => Number(s.paciente) === patientData[0].id
         );
+
+        console.log('Dados carregados:', {
+          userId,
+          filteredSessions,
+          psicologos: psychs,
+          usuarios: allUsers,
+        });
 
         setSessions(filteredSessions);
         setPsychologists(psychs);
@@ -80,8 +99,10 @@ export default function Appointments() {
 
   const getPsychologistName = (psychId: number) => {
     const psicologo = psychologists.find((p) => p.id === psychId);
-    const user = users.find((u) => u.id === psicologo?.user);
-    return user?.name || 'Psicólogo não encontrado';
+    if (!psicologo) return 'Psicólogo não encontrado';
+
+    const user = users.find((u) => u.id === psicologo.user);
+    return user?.name || 'Nome não disponível';
   };
 
   const confirmDeleteSession = (sessionId: number) => {
@@ -107,34 +128,40 @@ export default function Appointments() {
       } else {
         Alert.alert('Erro', 'Não foi possível cancelar a sessão.');
       }
-    } catch {
+    } catch (err) {
+      console.error('Erro ao deletar sessão:', err);
       Alert.alert('Erro', 'Erro de conexão ao tentar cancelar.');
     }
   };
 
-  const renderCard = ({ item }: { item: Session }) => (
-    <View style={styles.card}>
-      <Image
-        source={require('@/assets/images/psychologist/avatar.jpeg')}
-        style={styles.avatar}
-      />
-      <View style={styles.info}>
-        <Text style={styles.name}>{getPsychologistName(item.psicologo)}</Text>
-        <Text style={styles.specialty}>🗓 {item.data} às {item.horario}</Text>
-        <Text style={styles.status}>Status: {item.status}</Text>
-        <Text style={styles.obs}>Obs: {item.observacoes}</Text>
+  const renderCard = ({ item }: { item: Session }) => {
+    console.log('Renderizando sessão:', item);
 
-        <TouchableOpacity
-          style={styles.cancelButton}
-          onPress={() => confirmDeleteSession(item.id)}
-        >
-          <Text style={styles.cancelButtonText}>Cancelar Sessão</Text>
-        </TouchableOpacity>
+    return (
+      <View style={styles.card}>
+        <Image
+          source={require('@/assets/images/psychologist/avatar.jpeg')}
+          style={styles.avatar}
+        />
+        <View style={styles.info}>
+          <Text style={styles.name}>{getPsychologistName(item.psicologo)}</Text>
+          <Text style={styles.specialty}>🗓 {item.data} às {item.horario}</Text>
+          <Text style={styles.status}>Status: {item.status}</Text>
+          <Text style={styles.obs}>Obs: {item.observacoes}</Text>
+
+          {item.status.toLowerCase() !== 'cancelada' && (
+            <TouchableOpacity
+              style={styles.cancelButton}
+              onPress={() => confirmDeleteSession(item.id)}
+            >
+              <Text style={styles.cancelButtonText}>Cancelar Sessão</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
-    </View>
-  );
+    );
+  };
 
-  // Skeleton "manual" para carregamento igual seu exemplo do ScheduleScreen
   const renderSkeleton = () => (
     [...Array(3)].map((_, i) => (
       <View key={i} style={styles.card}>
@@ -162,6 +189,7 @@ export default function Appointments() {
           data={sessions}
           keyExtractor={(item) => item.id.toString()}
           renderItem={renderCard}
+          contentContainerStyle={{ paddingBottom: 20 }}
         />
       )}
     </View>
@@ -197,8 +225,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
   },
-
-  // Skeleton styles
   skeletonAvatar: {
     width: 60,
     height: 60,
