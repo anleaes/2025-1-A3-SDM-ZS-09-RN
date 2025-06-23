@@ -87,6 +87,7 @@ export default function ScheduleScreen() {
         setLoggedUserId(userIdNumber);
 
         // 2. Buscar o patientId correspondente
+        //comentário
         const patientRes = await fetch(`http://127.0.0.1:8000/api/patients/?user=${userIdNumber}`);
         if (!patientRes.ok) throw new Error('Erro ao buscar paciente');
         
