@@ -13,8 +13,8 @@ import {
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Calendar } from 'react-native-calendars';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const loggedUserId = 2; // Substitua pelo ID real do usuário logado
 
 type Psychologist = {
   id: number;
@@ -58,12 +58,44 @@ export default function ScheduleScreen() {
   const [planDescription, setPlanDescription] = useState('');
   const [planObjectives, setPlanObjectives] = useState('');
   const [selectedEndDate, setSelectedEndDate] = useState('');
+  const [loggedUserId, setLoggedUserId] = useState<number | null>(null); 
+  const [loggedPatientId, setLoggedPatientId] = useState<number | null>(null); // Adicione este estado
 
   const router = useRouter();
 
+  const resetForm = () => {
+  setModalVisible(false);
+  setStep(1);
+  setSelectedDate('');
+  setSelectedTime('');
+  setPlanDescription('');
+  setPlanObjectives('');
+  setSelectedEndDate('');
+};
+
   useEffect(() => {
-    const fetchAll = async () => {
+    const fetchData = async () => {
       try {
+        // 1. Obter o ID do usuário logado
+        const userId = await AsyncStorage.getItem('userId');
+        if (!userId) {
+          Alert.alert('Erro', 'Usuário não identificado');
+          return;
+        }
+        
+        const userIdNumber = parseInt(userId, 10);
+        setLoggedUserId(userIdNumber);
+
+        // 2. Buscar o patientId correspondente
+        const patientRes = await fetch(`http://127.0.0.1:8000/api/patients/?user=${userIdNumber}`);
+        if (!patientRes.ok) throw new Error('Erro ao buscar paciente');
+        
+        const patientData = await patientRes.json();
+        if (patientData.length === 0) throw new Error('Paciente não encontrado');
+        
+        setLoggedPatientId(patientData[0].id); // Armazena o ID do paciente
+
+        // 3. Buscar os outros dados em paralelo
         const [resPsych, resSpecs, resRelations, resUsers] = await Promise.all([
           fetch('http://127.0.0.1:8000/api/psychologists/'),
           fetch('http://127.0.0.1:8000/api/specialties/'),
@@ -71,6 +103,7 @@ export default function ScheduleScreen() {
           fetch('http://127.0.0.1:8000/api/users/'),
         ]);
 
+        // Processar as respostas
         const dataPsych = await resPsych.json();
         const dataSpecs = await resSpecs.json();
         const dataRelations = await resRelations.json();
@@ -80,14 +113,16 @@ export default function ScheduleScreen() {
         setSpecialties(dataSpecs);
         setRelations(dataRelations);
         setUsers(dataUsers);
+        
       } catch (error) {
         console.error('Erro ao buscar dados:', error);
+        Alert.alert('Erro', 'Não foi possível carregar os dados. Tente novamente.');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchAll();
+    fetchData();
   }, []);
 
   const getUserName = (userId: number) => {
@@ -242,89 +277,178 @@ export default function ScheduleScreen() {
               )}
 
               {step === 3 && (
-                <>
-                  <Text style={{ fontWeight: 'bold', marginBottom: 8 }}>Valor: R$200,00</Text>
+              <>
+                <Text style={{ fontWeight: 'bold', marginBottom: 8 }}>Valor: R$200,00</Text>
 
-                  <TouchableOpacity
-                    style={{ backgroundColor: '#ffc107', marginTop: 16, padding: 12, borderRadius: 6, opacity: isSubmitting ? 0.7 : 1 }}
-                    onPress={async () => {
-                      setIsSubmitting(true);
-                      try {
-                        const therapyPayload: any = {
-                          descricao: planDescription,
-                          objetivos: planObjectives,
-                          data_inicio: selectedDate,
-                          paciente: loggedUserId,
-                          psicologo: selectedPsychologist.id,
-                        };
+                <TouchableOpacity
+                  style={{ backgroundColor: '#ffc107', marginTop: 16, padding: 12, borderRadius: 6, opacity: isSubmitting ? 0.7 : 1 }}
+                  onPress={async () => {
+                    if (!loggedUserId) {
+                      Alert.alert('Erro', 'Usuário não identificado. Faça login novamente.');
+                      return;
+                    }
 
-                        if (selectedEndDate.trim()) {
-                          therapyPayload.data_fim = selectedEndDate;
-                        }
+                    setIsSubmitting(true);
+                    try {
+                     const therapyPayload = {
+                        descricao: planDescription,
+                        objetivos: planObjectives,
+                        data_inicio: selectedDate,
+                        paciente: loggedPatientId, // Usar o patient.id em vez do user.id
+                        psicologo: selectedPsychologist.id,
+                        ...(selectedEndDate && { data_fim: selectedEndDate })
+                      };
 
-                        const therapyRes = await fetch('http://127.0.0.1:8000/api/therapy-plans/create/', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify(therapyPayload),
-                        });
-
-                        if (!therapyRes.ok) throw new Error('Erro ao criar plano terapêutico');
-                        const therapyPlan = await therapyRes.json();
-
-                        const sessionRes = await fetch('http://127.0.0.1:8000/api/sessions/create/', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({
-                            data: selectedDate,
-                            horario: selectedTime,
-                            status: 'agendada',
-                            observacoes: 'Primeira sessão',
-                            paciente: loggedUserId,
-                            psicologo: selectedPsychologist.id,
-                            plano: therapyPlan.id,
-                          }),
-                        });
-                        if (!sessionRes.ok) throw new Error('Erro ao criar sessão');
-                        const session = await sessionRes.json();
-
-                        const paymentRes = await fetch('http://127.0.0.1:8000/api/payments/create/', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({
-                            valor: 200.0,
-                            metodo: 'pix',
-                            status: 'pago',
-                            data: selectedDate,
-                            sessao: session.id,
-                          }),
-                        });
-
-                        if (!paymentRes.ok) throw new Error('Erro ao criar pagamento');
-
-                        Alert.alert('Sucesso', 'Agendamento concluído com sucesso!');
-                        setModalVisible(false);
-                        setStep(1);
-                        setSelectedDate('');
-                        setSelectedTime('');
-                        setPlanDescription('');
-                        setPlanObjectives('');
-                        setSelectedEndDate('');
-                      } catch (error) {
-                        console.error(error);
-                        Alert.alert('Erro', 'Falha ao concluir o agendamento.');
-                      } finally {
-                        setIsSubmitting(false);
+                      if (!loggedPatientId) {
+                        Alert.alert('Erro', 'ID do paciente não encontrado');
+                        return;
                       }
+
+                      if (selectedEndDate.trim()) {
+                        therapyPayload.data_fim = selectedEndDate;
+                      }
+
+                      console.log('Dados sendo enviados para terapia:', therapyPayload);
+
+                      const therapyRes = await fetch('http://127.0.0.1:8000/api/therapy-plans/create/', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(therapyPayload),
+                      });
+
+                      if (!therapyRes.ok) {
+                        const errorResponse = await therapyRes.json();
+                        console.log('Resposta de erro do servidor:', errorResponse);
+                        throw new Error('Erro ao criar plano terapêutico');
+                      }
+                      const therapyPlan = await therapyRes.json();
+
+                      const sessionRes = await fetch('http://127.0.0.1:8000/api/sessions/create/', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          data: selectedDate,
+                          horario: selectedTime,
+                          status: 'agendada',
+                          observacoes: 'Primeira sessão',
+                          paciente: loggedPatientId, // Usar o patient.id aqui também
+                          psicologo: selectedPsychologist.id,
+                          plano: therapyPlan.id,
+                        }),
+                      });
+                      if (!sessionRes.ok) throw new Error('Erro ao criar sessão');
+                      const session = await sessionRes.json();
+
+                      const paymentRes = await fetch('http://127.0.0.1:8000/api/payments/create/', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          valor: 200.0,
+                          metodo: 'pix',
+                          status: 'pago',
+                          data: selectedDate,
+                          sessao: session.id,
+                        }),
+                      });
+
+                      if (!paymentRes.ok) throw new Error('Erro ao criar pagamento');
+
+                    setStep(4);
+                
+                    } catch (error) {
+                      console.error(error);
+                      Alert.alert('Erro', 'Falha ao concluir o agendamento.');
+                    } finally {
+                      setIsSubmitting(false);
+                    }
+                  }}
+                  disabled={isSubmitting}
+                >
+                  <Text style={{ color: '#000', textAlign: 'center', fontWeight: 'bold' }}>
+                    {isSubmitting ? 'Processando...' : 'Finalizar e Pagar'}
+                  </Text>
+                </TouchableOpacity>
+              </>
+            )}
+
+          {step === 4 && (
+            <View style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(0,0,0,0.5)',
+              justifyContent: 'center',
+              alignItems: 'center',
+              padding: 20,
+              zIndex: 1000
+            }}>
+              <View style={{
+                backgroundColor: 'white',
+                padding: 20,
+                borderRadius: 10,
+                width: '100%',
+                maxWidth: 350,
+              }}>
+                <Text style={{ 
+                  fontSize: 20, 
+                  fontWeight: 'bold', 
+                  marginBottom: 15,
+                  textAlign: 'center'
+                }}>
+                  Operação concluída com sucesso!
+                </Text>
+                
+                <Text style={{ 
+                  marginBottom: 20,
+                  textAlign: 'center'
+                }}>
+                  Seu agendamento foi realizado e o pagamento foi processado.
+                </Text>
+                
+                {/* Botões em coluna */}
+                <View style={{ gap: 10 }}>
+                  <TouchableOpacity
+                    style={{ 
+                      backgroundColor: '#4CAF50',
+                      padding: 12,
+                      borderRadius: 6,
                     }}
-                    disabled={isSubmitting}
+                    onPress={() => {
+                      resetForm();
+                      router.push('/patient/appointments');
+                    }}
                   >
-                    <Text style={{ color: '#000', textAlign: 'center', fontWeight: 'bold' }}>
-                      {isSubmitting ? 'Processando...' : 'Finalizar e Pagar'}
+                    <Text style={{ 
+                      color: 'white', 
+                      textAlign: 'center', 
+                      fontWeight: 'bold' 
+                    }}>
+                      Ver Agendamentos
                     </Text>
                   </TouchableOpacity>
-                </>
-              )}
 
+                  <TouchableOpacity
+                    style={{ 
+                      backgroundColor: '#f44336',
+                      padding: 12,
+                      borderRadius: 6,
+                    }}
+                    onPress={resetForm}
+                  >
+                    <Text style={{ 
+                      color: 'white', 
+                      textAlign: 'center', 
+                      fontWeight: 'bold' 
+                    }}>
+                      Fechar
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          )}
               <TouchableOpacity
                 onPress={() => {
                   setModalVisible(false);
