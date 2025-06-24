@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { TouchableOpacity } from 'react-native';
 
 export default function SignUpPatient() {
   const router = useRouter();
@@ -75,7 +76,9 @@ export default function SignUpPatient() {
         onChangeText={setPlanoSaude}
       />
 
-      <Button title="Finalizar Cadastro" onPress={handleSubmit} />
+      <TouchableOpacity style={styles.button} onPress={handleSubmit}>
+        <Text style={styles.buttonText}>Finalizar Cadastro</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -90,4 +93,18 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 12,
   },
+  button: {
+    backgroundColor: '#4CAF50',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+
 });
