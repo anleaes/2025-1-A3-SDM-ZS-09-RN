@@ -83,7 +83,7 @@ export default function Login() {
       <TouchableOpacity
         onPress={handleLogin}
         style={{
-          backgroundColor: '#007bff',
+          backgroundColor: '#34dcf6',
           padding: 15,
           borderRadius: 5,
         }}

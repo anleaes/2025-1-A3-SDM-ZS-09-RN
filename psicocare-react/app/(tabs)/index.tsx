@@ -80,10 +80,10 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   loginButton: {
-    backgroundColor: '#3478f6',
+    backgroundColor: '#34dcf6',
   },
   signupButton: {
-    backgroundColor: '#34c759',
+    backgroundColor: '#62c46a',
   },
   buttonText: {
     color: '#fff',

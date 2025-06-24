@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { View, TextInput, Button, Text, StyleSheet, Alert, Platform } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { useRouter } from 'expo-router';
+import { TouchableOpacity } from 'react-native';
+
 
 export default function SignUpScreen() {
   const router = useRouter();
@@ -85,7 +87,9 @@ export default function SignUpScreen() {
         </Picker>
       </View>
 
-      <Button title="Próxima etapa" onPress={handleSignUp} />
+      <TouchableOpacity style={styles.button} onPress={handleSignUp}>
+        <Text style={styles.buttonText}>Próxima etapa</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -108,4 +112,18 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     overflow: 'hidden',
   },
+  button: {
+    backgroundColor: '#4CAF50',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+
 });
