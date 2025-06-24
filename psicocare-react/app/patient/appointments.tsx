@@ -9,6 +9,8 @@ import {
   Alert,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { toast } from 'react-toastify';
+
 
 type Session = {
   id: number;
@@ -37,6 +39,7 @@ export default function Appointments() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [loggedUserId, setLoggedUserId] = useState<number | null>(null);
+  
 
   useEffect(() => {
     const fetchData = async () => {
@@ -106,21 +109,24 @@ export default function Appointments() {
   };
 
   const confirmDeleteSession = (sessionId: number) => {
-    Alert.alert(
-      'Cancelar sessão',
-      'Você tem certeza que deseja cancelar esta sessão?',
-      [
-        { text: 'Não', style: 'cancel' },
-        { text: 'Sim', onPress: () => handleDeleteSession(sessionId) },
-      ],
-      { cancelable: true }
-    );
+    handleDeleteSession(sessionId);
+    toast.success('Sessão excluída com sucesso!');
   };
 
   const handleDeleteSession = async (sessionId: number) => {
+    const url = `http://127.0.0.1:8000/api/sessions/delete/${sessionId}/`;
+
+    console.log('🛑 Tentando deletar sessão...');
+    console.log('👉 ID da sessão:', sessionId);
+    console.log('🔗 URL chamada:', url);
+
     try {
-      const url = `http://127.0.0.1:8000/api/sessions/delete/${sessionId}/`;
       const response = await fetch(url, { method: 'DELETE' });
+
+      console.log('📡 Status da resposta:', response.status);
+
+      const text = await response.text();
+      console.log('📦 Corpo da resposta:', text);
 
       if (response.ok) {
         setSessions((prev) => prev.filter((s) => s.id !== sessionId));
@@ -129,10 +135,11 @@ export default function Appointments() {
         Alert.alert('Erro', 'Não foi possível cancelar a sessão.');
       }
     } catch (err) {
-      console.error('Erro ao deletar sessão:', err);
+      console.error('❌ Erro de conexão ao tentar cancelar sessão:', err);
       Alert.alert('Erro', 'Erro de conexão ao tentar cancelar.');
     }
   };
+
 
   const renderCard = ({ item }: { item: Session }) => {
     console.log('Renderizando sessão:', item);
