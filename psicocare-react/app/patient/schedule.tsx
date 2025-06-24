@@ -74,17 +74,21 @@ export default function ScheduleScreen() {
 };
 
   useEffect(() => {
+
     const fetchData = async () => {
       try {
         // 1. Obter o ID do usuário logado
         const userId = await AsyncStorage.getItem('userId');
+        console.log('User ID obtido do AsyncStorage:', userId);
         if (!userId) {
           Alert.alert('Erro', 'Usuário não identificado');
           return;
         }
         
         const userIdNumber = parseInt(userId, 10);
+        console.log('User ID convertido para número:', userIdNumber);
         setLoggedUserId(userIdNumber);
+
 
         // 2. Buscar o patientId correspondente
         //comentário
@@ -95,6 +99,7 @@ export default function ScheduleScreen() {
         if (patientData.length === 0) throw new Error('Paciente não encontrado');
         
         setLoggedPatientId(patientData[0].id); // Armazena o ID do paciente
+        console.log('Paciente ID:', patientData[0].id);
 
         // 3. Buscar os outros dados em paralelo
         const [resPsych, resSpecs, resRelations, resUsers] = await Promise.all([

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function SignUpPatient() {
   const router = useRouter();
@@ -30,6 +31,10 @@ export default function SignUpPatient() {
       if (!response.ok) {
         throw new Error('Erro ao cadastrar paciente');
       }
+
+       // Armazena o userId para ser usado em sessões futuras
+      await AsyncStorage.setItem('userId', userId as string);
+      await AsyncStorage.setItem('userType', 'paciente');
 
       Alert.alert('Sucesso', 'Cadastro concluído com sucesso!');
       router.push('/patient'); // Redireciona para a página inicial ou dashboard
